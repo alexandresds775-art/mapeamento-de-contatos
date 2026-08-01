@@ -11,7 +11,8 @@
 body{background:var(--bg);color:var(--text)}
 header{background:var(--primary);color:var(--bg);padding:14px 4%;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100;box-shadow:0 2px 12px rgba(0,0,0,.25)}
 .brand{display:flex;align-items:center;gap:14px}
-.logo{width:52px;height:52px;border-radius:50%;background:var(--bg);display:flex;align-items:center;justify-content:center;font-size:28px;font-weight:800;color:var(--primary)}
+.logo{width:52px;height:52px;border-radius:50%;background:var(--bg);display:flex;align-items:center;justify-content:center;overflow:hidden}
+.logo svg{width:34px;height:34px}
 .brand h1{font-size:19px;letter-spacing:3px;line-height:1.1}
 .brand p{font-size:10px;letter-spacing:5px;opacity:.85}
 .hinfo{text-align:right;font-size:12px}
@@ -53,7 +54,11 @@ canvas{width:100%!important;height:100%!important}
 
 <header>
   <div class="brand">
-    <div class="logo">∞</div>
+    <div class="logo">
+      <svg viewBox="0 0 52 52" fill="none">
+        <path d="M26 26C20 15, 7 15, 7 26C7 37, 20 37, 26 26C32 15, 45 15, 45 26C45 37, 32 37, 26 26Z" stroke="#01302A" stroke-width="3.4" stroke-linecap="round"/>
+      </svg>
+    </div>
     <div><h1>INFINITY</h1><p>PIERCING</p></div>
   </div>
   <div class="hinfo">
@@ -82,7 +87,7 @@ canvas{width:100%!important;height:100%!important}
 <main>
   <div class="kpis">
     <div class="kpi"><span>Total de Contatos</span><b id="kTotal">-</b><small id="kTotalSub"></small></div>
-    <div class="kpi"><span>Mês Selecionado</span><b id="kMes">-</b><small>filtro ativo</small></div>
+    <div class="kpi"><span>Mês Selecionado</span><b id="kMes">-</b><small id="kMesSub">selecione um mês</small></div>
     <div class="kpi"><span>Média por Dia</span><b id="kMedia">-</b><small>contatos/dia</small></div>
     <div class="kpi"><span>Clientes Antigos</span><b id="kAntigos">-</b><small>base recorrente</small></div>
   </div>
@@ -173,13 +178,16 @@ function renderAll(){
   const st=document.getElementById('status');
   document.getElementById('kTotal').textContent=dados.length.toLocaleString('pt-BR');
   document.getElementById('kTotalSub').textContent=live?'dados ao vivo':'dados de exemplo';
+  // Mês selecionado agora mostra o total do mês filtrado
+  const selMes=document.getElementById('fMes').value;
+  if(selMes){document.getElementById('kMes').textContent=dados.filter(d=>d.mesKey===selMes).length.toLocaleString('pt-BR');document.getElementById('kMesSub').textContent=rotulo(selMes);}
+  else{document.getElementById('kMes').textContent='-';document.getElementById('kMesSub').textContent='selecione um mês';}
   const dias=new Set(dados.map(d=>d.mesKey+'-'+d.data.slice(0,2)));
   const media=dias.size?Math.round(dados.length/dias.size*10)/10:0;
   document.getElementById('kMedia').textContent=String(media).replace('.',',');
   const resp=dados.filter(d=>d.antigo==='SIM'||d.antigo==='NÃO');
   const sim=resp.filter(d=>d.antigo==='SIM').length;
   document.getElementById('kAntigos').textContent=resp.length?Math.round(sim/resp.length*100)+'%':'-';
-  document.getElementById('kMes').textContent=filtros.mes?rotulo(filtros.mes):'-';
   const tb=document.getElementById('tabelaDados');
   tb.innerHTML=dados.slice(0,50).map(d=>'<tr><td>'+d.data+'</td><td>'+d.hora+'</td><td>'+d.canal+'</td><td>'+d.atend+'</td><td>'+d.motivo+'</td><td>'+d.categoria+'</td></tr>').join('')||'<tr><td colspan="6">Nenhum registro</td></tr>';
   if(live&&dados.length){
