@@ -164,7 +164,7 @@ const MESES=['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','
 let charts={};
 Chart.defaults.font.family='Segoe UI, system-ui, sans-serif';
 Chart.defaults.color='#6b6b6b';
-const baseOpts={responsive:true,maintainAspectRatio:false,devicePixelRatio:2,plugins:{legend:{position:'bottom',labels:{usePointStyle:true,boxWidth:8,padding:14}},tooltip:{backgroundColor:'#01302A',titleColor:'#FFF8ED',bodyColor:'#FFF8ED',padding:10,cornerRadius:8},datalabels:{color:'#fff',font:{weight:'bold',size:12},formatter:function(v){return v.toLocaleString('pt-BR');}}}};
+const baseOpts={responsive:true,maintainAspectRatio:false,devicePixelRatio:2,plugins:{legend:{position:'bottom',labels:{usePointStyle:true,boxWidth:8,padding:14}},tooltip:{backgroundColor:'#01302A',titleColor:'#FFF8ED',bodyColor:'#FFF8ED',padding:10,cornerRadius:8},datalabels:{color:'#01302A',backgroundColor:'rgba(255,255,255,0.85)',borderRadius:6,padding:{top:2,bottom:2,left:4,right:4},font:{weight:'bold',size:10},formatter:function(v){return v.toLocaleString('pt-BR');}}}};
 function showPage(evt,id){document.querySelectorAll('.page').forEach(p=>p.style.display='none');document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));document.getElementById(id).style.display='block';evt.currentTarget.classList.add('active');}
 function rotulo(k){const p=k.split('-');return MESES[+p[1]-1]+'/'+p[0];}
 function novoChart(id,cfg){if(charts[id])charts[id].destroy();charts[id]=new Chart(document.getElementById(id),cfg);}
