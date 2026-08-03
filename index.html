@@ -139,8 +139,9 @@ canvas{width:100%!important;height:100%!important}
 <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.2.0/dist/chartjs-plugin-datalabels.min.js"></script>
 <script>
 Chart.register(ChartDataLabels);
-const SHEET_CSV='https://docs.google.com/spreadsheets/d/e/2PACX-1vT-CwUw9j29B4hjRm7uu2Ss6yzakIj2IoErFtuvIqJSrW87jU0QKHkyjbO1nXlB1LJirVBHDy4TUAEU/pub?gid=0&single=true&output=csv';
-const SHEET_PROXY='https://api.allorigins.win/raw?url='+encodeURIComponent(SHEET_CSV);
+const SHEET_BASE='https://docs.google.com/spreadsheets/d/e/2PACX-1vT-CwUw9j29B4hjRm7uu2Ss6yzakIj2IoErFtuvIqJSrW87jU0QKHkyjbO1nXlB1LJirVBHDy4TUAEU/pub?gid=0&single=true&output=csv';
+// FUNÇÃO QUE GERA LINK COM TIMESTAMP PARA EVITAR CACHE - CORREÇÃO DOS DADOS ESTACIONADOS
+function getSheetUrl(){return SHEET_BASE+'&t='+Date.now();}
 const EMBED=[
 {data:'01/08/2026',hora:'10:15',canal:'WHATSAPP',atend:'LARISSA',antigo:'SIM',motivo:'Troca',categoria:'Resolução de Troca',mesKey:'2026-08'},
 {data:'01/08/2026',hora:'09:30',canal:'WHATSAPP',atend:'VINICIUS',antigo:'SIM',motivo:'Dúvidas',categoria:'Dúvida sobre Compra',mesKey:'2026-08'},
@@ -164,7 +165,7 @@ const MESES=['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','
 let charts={};
 Chart.defaults.font.family='Segoe UI, system-ui, sans-serif';
 Chart.defaults.color='#6b6b6b';
-const baseOpts={responsive:true,maintainAspectRatio:false,devicePixelRatio:2,plugins:{legend:{position:'bottom',labels:{usePointStyle:true,boxWidth:8,padding:14}},tooltip:{backgroundColor:'#01302A',titleColor:'#FFF8ED',bodyColor:'#FFF8ED',padding:10,cornerRadius:8},datalabels:{color:'#01302A',backgroundColor:'rgba(255,255,255,0.85)',borderRadius:6,padding:{top:2,bottom:2,left:4,right:4},font:{weight:'bold',size:10},formatter:function(v){return v.toLocaleString('pt-BR');}}}};
+const baseOpts={responsive:true,maintainAspectRatio:false,devicePixelRatio:2,plugins:{legend:{position:'bottom',labels:{usePointStyle:true,boxWidth:8,padding:14}},tooltip:{backgroundColor:'#01302A',titleColor:'#FFF8ED',bodyColor:'#FFF8ED',padding:10,cornerRadius:8},datalabels:{color:'#01302A',anchor:'end',align:'end',font:{weight:'bold',size:10},formatter:function(v){return v.toLocaleString('pt-BR');}}}};
 function showPage(evt,id){document.querySelectorAll('.page').forEach(p=>p.style.display='none');document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));document.getElementById(id).style.display='block';evt.currentTarget.classList.add('active');}
 function rotulo(k){const p=k.split('-');return MESES[+p[1]-1]+'/'+p[0];}
 function novoChart(id,cfg){if(charts[id])charts[id].destroy();charts[id]=new Chart(document.getElementById(id),cfg);}
@@ -221,8 +222,25 @@ function renderAll(){
 function parseCSV(txt){const rows=[];let row=[],cur='',inQ=false;for(let i=0;i<txt.length;i++){const c=txt[i];if(inQ){if(c==='"'){if(txt[i+1]==='"'){cur+='"';i++;}else inQ=false;}else cur+=c;}else if(c==='"')inQ=true;else if(c===','){row.push(cur);cur='';}else if(c==='\n'){row.push(cur);rows.push(row);row=[];cur='';}else if(c!=='\r')cur+=c;}if(cur!==''||row.length){row.push(cur);rows.push(row);}return rows.filter(r=>r.some(x=>x.trim()!==''));}
 function parseLinha(r){if(r.length<8)return null;const m=(r[0]||'').match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);if(!m)return null;const dia=+m[1],mes=+m[2],ano=+m[3];if(ano<2026||mes<1||mes>12||dia<1||dia>31)return null;const dd=String(dia).padStart(2,'0'),mm=String(mes).padStart(2,'0');return{data:dd+'/'+mm+'/'+ano,hora:(r[1]||'').trim(),canal:(r[2]||'').trim().toUpperCase(),atend:(r[3]||'').trim().toUpperCase(),antigo:(r[4]||'').trim().toUpperCase(),motivo:(r[7]||'').trim(),categoria:(r[8]||'').trim(),mesKey:ano+'-'+mm};}
 async function tentar(url){const res=await fetch(url);if(!res.ok)throw new Error('HTTP '+res.status);return res.text();}
-async function carregar(){const st=document.getElementById('status');try{let txt;try{txt=await tentar(SHEET_CSV);}catch(e){txt=await tentar(SHEET_PROXY);}const linhas=parseCSV(txt);const registros=linhas.slice(1).map(parseLinha).filter(Boolean);if(registros.length<3)throw new Error('Poucos dados');DADOS=registros;live=true;montarFiltros();st.textContent='Dados ao vivo ('+registros.length+' registros)';st.className='ok';}catch(e){DADOS=EMBED.slice();live=false;montarFiltros();st.textContent='Dados de exemplo';st.className='demo';}renderAll();}
-montarFiltros();renderAll();carregar();setInterval(carregar,300000);
+async function carregar(){
+  const st=document.getElementById('status');
+  try{
+    // USA O LINK COM TIMESTAMP PARA EVITAR CACHE E BUSCAR DADOS NOVOS
+    let txt=await tentar(getSheetUrl());
+    const linhas=parseCSV(txt);
+    const registros=linhas.slice(1).map(parseLinha).filter(Boolean);
+    if(registros.length<3)throw new Error('Poucos dados');
+    DADOS=registros;live=true;montarFiltros();
+    st.textContent='Dados ao vivo ('+registros.length+' registros)';
+    st.className='ok';
+  }catch(e){
+    DADOS=EMBED.slice();live=false;montarFiltros();
+    st.textContent='Dados de exemplo';
+    st.className='demo';
+  }
+  renderAll();
+}
+montarFiltros();renderAll();carregar();setInterval(carregar,60000); // atualiza a cada 1 minuto
 </script>
 </body>
 </html>
