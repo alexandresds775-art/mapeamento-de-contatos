@@ -1,3 +1,4 @@
+<!DOCTYPE html>
 <html lang="pt-br">
 <head>
 <meta charset="UTF-8">
@@ -164,9 +165,10 @@ const baseOpts={responsive:true,maintainAspectRatio:false,devicePixelRatio:2,plu
 function showPage(evt,id){document.querySelectorAll('.page').forEach(p=>p.style.display='none');document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));document.getElementById(id).style.display='block';evt.currentTarget.classList.add('active');}
 function rotulo(k){const p=k.split('-');return MESES[+p[1]-1]+'/'+p[0];}
 function novoChart(id,cfg){if(charts[id])charts[id].destroy();charts[id]=new Chart(document.getElementById(id),cfg);}
-function contar(arr,ch,top){const m={};arr.forEach(d=>{const v=norm(d[ch]);if(v)m[v]=(m[v]||0)+1;});return Object.entries(m).sort((a,b)=>b[1]-a[1]).slice(0,top||8);}
 // NORMALIZAÇÃO: remove espaços, maiúsculas, remove acentos
 function norm(v){if(!v)return '';return v.toString().trim().toUpperCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'');}
+function contar(arr,ch,top){const m={};arr.forEach(d=>{const v=norm(d[ch]);if(v)m[v]=(m[v]||0)+1;});return Object.entries(m).sort((a,b)=>b[1]-a[1]).slice(0,top||8);}
+// FILTRO COM NORMALIZAÇÃO - CORRIGIDO
 function filtrar(){return DADOS.filter(d=>{const mesOK=!filtros.mes||d.mesKey===filtros.mes;const motOK=!filtros.motivo||norm(d.motivo)===filtros.motivo;const atOK=!filtros.atend||norm(d.atend)===filtros.atend;const canOK=!filtros.canal||norm(d.canal)===filtros.canal;return mesOK&&motOK&&atOK&&canOK;});}
 function montarFiltros(){
   const mes=document.getElementById('fMes');let opts='<option value="">Todos os meses</option>';
