@@ -145,7 +145,7 @@ canvas{width:100%!important;height:100%!important}
 </main>
 
 <script>
-// ===== UPLOAD DA LOGO (retangular, salva no navegador) — roda PRIMEIRO =====
+// ===== UPLOAD DA LOGO =====
 (function(){
 try{
   var li=document.getElementById('logoInput');
@@ -169,12 +169,13 @@ try{
 })();
 // ===== FIM UPLOAD LOGO =====
 
-// ===== PLUGIN DE RÓTULOS EMBUTIDO (sem CDN externo) =====
+// ===== PLUGIN DE RÓTULOS EMBUTIDO (pizza/rosca: rótulo FORA com linha de chamada) =====
 var dataLabelsPlugin={
   id:'inlineLabels',
   afterDatasetsDraw:function(chart){
     try{
       var ctx=chart.ctx;
+      var type=chart.config.type;
       chart.data.datasets.forEach(function(ds,i){
         var meta=chart.getDatasetMeta(i);
         if(!meta.hidden&&meta.data.length){
@@ -182,18 +183,40 @@ var dataLabelsPlugin={
           for(var k=0;k<ds.data.length;k++){total+=(+ds.data[k]||0);}
           meta.data.forEach(function(el,idx){
             var v=ds.data[idx];
-            if(v===undefined||v===null)return;
-            var p=el.tooltipPosition?el.tooltipPosition():{x:el.x,y:el.y};
+            if(v===undefined||v===null||(+v)<=0)return;
             var txt=Number(v).toLocaleString('pt-BR');
-            if(chart.config.type==='pie'||chart.config.type==='doughnut'){txt=Number(v).toLocaleString('pt-BR')+' ('+Math.round(v/total*100)+'%)';}
-            ctx.save();
-            ctx.font='bold 10px Segoe UI, sans-serif';
-            ctx.fillStyle='#01302A';
-            ctx.textAlign='center';
-            ctx.textBaseline='bottom';
-            if(chart.config.type==='pie'||chart.config.type==='doughnut'){ctx.fillText(txt,p.x,p.y);}
-            else{ctx.fillText(txt,p.x,p.y-4);}
-            ctx.restore();
+            if(type==='pie'||type==='doughnut'){
+              var pct=Math.round((+v)/total*100);
+              txt+=' ('+pct+'%)';
+              var mid=(el.startAngle+el.endAngle)/2;
+              var radius=el.outerRadius+22;
+              var x=el.x+Math.cos(mid)*radius;
+              var y=el.y+Math.sin(mid)*radius;
+              ctx.save();
+              // linha de chamada
+              ctx.strokeStyle='rgba(1,48,42,.4)';
+              ctx.lineWidth=1;
+              ctx.beginPath();
+              ctx.moveTo(el.x+Math.cos(mid)*el.outerRadius,el.y+Math.sin(mid)*el.outerRadius);
+              ctx.lineTo(x,y);
+              ctx.stroke();
+              // rótulo
+              ctx.font='bold 11px Segoe UI, sans-serif';
+              ctx.fillStyle='#01302A';
+              ctx.textBaseline='middle';
+              if(mid>Math.PI/2&&mid<Math.PI*3/2){ctx.textAlign='right';ctx.fillText(txt,x-6,y);}
+              else{ctx.textAlign='left';ctx.fillText(txt,x+6,y);}
+              ctx.restore();
+            }else{
+              var p=el.tooltipPosition?el.tooltipPosition():{x:el.x,y:el.y};
+              ctx.save();
+              ctx.font='bold 10px Segoe UI, sans-serif';
+              ctx.fillStyle='#01302A';
+              ctx.textAlign='center';
+              ctx.textBaseline='bottom';
+              ctx.fillText(txt,p.x,p.y-4);
+              ctx.restore();
+            }
           });
         }
       });
@@ -311,7 +334,6 @@ function renderAll(){
     }else{tb.innerHTML='<tr><td colspan="6">Nenhum registro</td></tr>';}
 
     if(live&&dados.length){
-      // gráficos com dados ao vivo
       var mot=contar(dados,'motivo',8);
       novoChart('cMotivos',{type:'doughnut',data:{labels:mot.map(function(x){return x[0];}),datasets:[{data:mot.map(function(x){return x[1];}),backgroundColor:CORES,borderWidth:2,borderColor:'#fff'}]},options:Object.assign({},baseOpts,{cutout:'58%'})});
       var can=contar(dados,'canal',5);
@@ -322,7 +344,6 @@ function renderAll(){
       var hrs={};dados.forEach(function(d){var h=String(d.hora).split(':')[0];if(h)hrs[h]=(hrs[h]||0)+1;});
       var ha=Object.keys(hrs).sort(function(a,b){return +a-+b;}).map(function(h){return {h:h+'h',v:hrs[h]};});
       novoChart('cHora',{type:'line',data:{labels:ha.map(function(x){return x.h;}),datasets:[{label:'Volume',data:ha.map(function(x){return x.v;}),borderColor:'#C9A227',backgroundColor:'rgba(201,162,39,.15)',fill:true,tension:.4,pointRadius:4}]},options:baseOpts});
-      // CONTATOS POR DIA — eixo X com DATAS (dd/mm)
       var diasA={};dados.forEach(function(d){var c=d.data.slice(0,5);diasA[c]=(diasA[c]||0)+1;});
       var da=Object.keys(diasA).sort().map(function(k){return {l:k,v:diasA[k]};});
       novoChart('cDia',{type:'line',data:{labels:da.map(function(x){return x.l;}),datasets:[{label:'Atendimentos',data:da.map(function(x){return x.v;}),borderColor:'#01302A',backgroundColor:'rgba(1,48,42,.10)',fill:true,tension:.35,pointRadius:2}]},options:baseOpts});
@@ -348,13 +369,11 @@ function renderAll(){
       });
       document.getElementById('tabelaMes').innerHTML=html+'</tbody>';
     }else{
-      // dados de exemplo (fallback imediato)
       novoChart('cMotivos',{type:'doughnut',data:{labels:AGREG.motivos.labels,datasets:[{data:AGREG.motivos.data,backgroundColor:CORES,borderWidth:2,borderColor:'#fff'}]},options:Object.assign({},baseOpts,{cutout:'58%'})});
       novoChart('cCanais',{type:'pie',data:{labels:AGREG.canais.labels,datasets:[{data:AGREG.canais.data,backgroundColor:['#01302A','#C9A227'],borderWidth:2,borderColor:'#fff'}]},options:baseOpts});
       novoChart('cAtend',{type:'bar',data:{labels:AGREG.atend.labels,datasets:[{label:'Total',data:AGREG.atend.data,backgroundColor:CORES,borderRadius:6}]},options:baseOpts});
       novoChart('cEquipe',{type:'pie',data:{labels:AGREG.atend.labels,datasets:[{data:[60,38,2],backgroundColor:CORES}]},options:baseOpts});
       novoChart('cHora',{type:'line',data:{labels:AGREG.hora.labels,datasets:[{label:'Volume',data:AGREG.hora.data,borderColor:'#C9A227',backgroundColor:'rgba(201,162,39,.15)',fill:true,tension:.4,pointRadius:4}]},options:baseOpts});
-      // CONTATOS POR DIA — eixo X com DATAS (dd/mm, exemplo)
       novoChart('cDia',{type:'line',data:{labels:AGREG.dia.labels,datasets:[{label:'Atendimentos',data:AGREG.dia.data,borderColor:'#01302A',backgroundColor:'rgba(1,48,42,.10)',fill:true,tension:.35,pointRadius:2}]},options:baseOpts});
       novoChart('cCat',{type:'bar',options:Object.assign({},baseOpts,{indexAxis:'y'}),data:{labels:AGREG.cat.labels,datasets:[{label:'Qtd',data:AGREG.cat.data,backgroundColor:'rgba(1,48,42,.85)',borderRadius:6}]}});
       novoChart('cSub',{type:'bar',data:{labels:AGREG.sub.labels,datasets:[{label:'Ocorrências',data:AGREG.sub.data,backgroundColor:'#C9A227',borderRadius:6}]},options:baseOpts});
