@@ -5,7 +5,6 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Infinity Piercing | Dashboard</title>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.2.0/dist/chartjs-plugin-datalabels.min.js"></script>
 <style>
 :root{--primary:#01302A;--bg:#FFF8ED;--accent:#C9A227;--white:#fff;--text:#1A1A1A;--muted:#6b6b6b;--line:#e8e0d2;--shadow:0 6px 20px rgba(1,48,42,.08);--radius:14px}
 *{margin:0;padding:0;box-sizing:border-box;font-family:'Segoe UI',system-ui,-apple-system,sans-serif}
@@ -15,7 +14,7 @@ header{background:var(--primary);color:var(--bg);padding:14px 4%;display:flex;al
 .logo-upload{position:relative;width:120px;height:56px;border-radius:10px;background:rgba(255,255,255,.12);border:2px dashed rgba(255,255,255,.4);display:flex;align-items:center;justify-content:center;overflow:hidden;cursor:pointer;transition:.3s}
 .logo-upload:hover{background:rgba(255,255,255,.2);border-color:var(--accent)}
 .logo-upload img{width:100%;height:100%;object-fit:contain;display:none}
-.logo-upload .placeholder{font-size:10px;color:rgba(255,255,255,.8);text-align:center;line-height:1.3;padding:4px}
+.logo-upload .placeholder{font-size:10px;color:rgba(255,255,255,.85);text-align:center;line-height:1.3;padding:4px}
 .logo-upload input[type=file]{position:absolute;inset:0;opacity:0;cursor:pointer}
 .logo-upload .btn-remove{position:absolute;top:2px;right:2px;background:rgba(192,57,43,.9);color:#fff;border:none;border-radius:50%;width:18px;height:18px;font-size:11px;line-height:1;cursor:pointer;display:none;z-index:2}
 .brand h1{font-size:19px;letter-spacing:3px;line-height:1.1}
@@ -145,18 +144,24 @@ canvas{width:100%!important;height:100%!important}
   </section>
 </main>
 
-<script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.2.0/dist/chartjs-plugin-datalabels.min.js"></script>
 <script>
-Chart.register(ChartDataLabels);
-// ===== UPLOAD DA LOGO =====
+// ========== SEGURANÇA: se o Chart.js falhar, nada mais roda ==========
+if(typeof Chart==='undefined'){document.getElementById('status').textContent='Erro: Chart.js não carregou';}else{
+// ===== PLUGIN DE RÓTULOS EMBUTIDO (sem CDN externo - não quebra nunca) =====
+const dataLabelsPlugin={id:'inlineLabels',afterDatasetsDraw(chart){const ctx=chart.ctx;chart.data.datasets.forEach((ds,i)=>{const meta=chart.getDatasetMeta(i);if(!meta.hidden&&meta.data.length){const total=ds.data.reduce((a,b)=>a+(+b||0),0);meta.data.forEach((el,idx)=>{const v=ds.data[idx];if(v===undefined||v===null)return;const p=el.tooltipPosition?el.tooltipPosition():{x:el.x,y:el.y};let txt=Number(v).toLocaleString('pt-BR');if(chart.config.type==='pie'||chart.config.type==='doughnut'){txt=Number(v).toLocaleString('pt-BR')+' ('+Math.round(v/total*100)+'%)';}ctx.save();ctx.font='bold 10px Segoe UI, sans-serif';ctx.fillStyle='#01302A';ctx.textAlign='center';ctx.textBaseline='bottom';if(chart.config.type==='pie'||chart.config.type==='doughnut'){ctx.fillText(txt,p.x,p.y);}else{ctx.fillText(txt,p.x,p.y-4);}ctx.restore();});}});}};
+Chart.register(dataLabelsPlugin);
+// ===== FIM PLUGIN RÓTULOS =====
+// ===== UPLOAD DA LOGO (retangular, salva no navegador) =====
+try{
 const logoInput=document.getElementById('logoInput');
 const logoImg=document.getElementById('logoImg');
 const logoPlaceholder=document.getElementById('logoPlaceholder');
 const logoRemove=document.getElementById('logoRemove');
-function carregarLogoSalva(){const s=localStorage.getItem('infinityLogo');if(s){logoImg.src=s;logoImg.style.display='block';logoPlaceholder.style.display='none';logoRemove.style.display='block';}}
-logoInput.addEventListener('change',function(e){const file=e.target.files[0];if(!file)return;const reader=new FileReader();reader.onload=function(ev){const data=ev.target.result;logoImg.src=data;logoImg.style.display='block';logoPlaceholder.style.display='none';logoRemove.style.display='block';localStorage.setItem('infinityLogo',data);};reader.readAsDataURL(file);});
-function removerLogo(ev){ev.stopPropagation();localStorage.removeItem('infinityLogo');logoImg.style.display='none';logoPlaceholder.style.display='block';logoRemove.style.display='none';logoInput.value='';}
+function carregarLogoSalva(){try{const s=localStorage.getItem('infinityLogo');if(s){logoImg.src=s;logoImg.style.display='block';logoPlaceholder.style.display='none';logoRemove.style.display='block';}}catch(e){}}
+logoInput.addEventListener('change',function(e){const file=e.target.files[0];if(!file)return;const reader=new FileReader();reader.onload=function(ev){const data=ev.target.result;logoImg.src=data;logoImg.style.display='block';logoPlaceholder.style.display='none';logoRemove.style.display='block';try{localStorage.setItem('infinityLogo',data);}catch(err){}};reader.readAsDataURL(file);});
+function removerLogo(ev){ev.stopPropagation();try{localStorage.removeItem('infinityLogo');}catch(e){}logoImg.style.display='none';logoPlaceholder.style.display='block';logoRemove.style.display='none';logoInput.value='';}
 carregarLogoSalva();
+}catch(e){}
 // ===== FIM UPLOAD LOGO =====
 const SHEET_BASE='https://docs.google.com/spreadsheets/d/e/2PACX-1vT-CwUw9j29B4hjRm7uu2Ss6yzakIj2IoErFtuvIqJSrW87jU0QKHkyjbO1nXlB1LJirVBHDy4TUAEU/pub?gid=0&single=true&output=csv';
 function getSheetUrl(){return SHEET_BASE+'&t='+Date.now();}
@@ -183,10 +188,10 @@ const MESES=['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','
 let charts={};
 Chart.defaults.font.family='Segoe UI, system-ui, sans-serif';
 Chart.defaults.color='#6b6b6b';
-const baseOpts={responsive:true,maintainAspectRatio:false,devicePixelRatio:2,plugins:{legend:{position:'bottom',labels:{usePointStyle:true,boxWidth:8,padding:14}},tooltip:{backgroundColor:'#01302A',titleColor:'#FFF8ED',bodyColor:'#FFF8ED',padding:10,cornerRadius:8},datalabels:{color:'#01302A',anchor:'end',align:'end',font:{weight:'bold',size:10},formatter:function(v){return v.toLocaleString('pt-BR');}}}};
+const baseOpts={responsive:true,maintainAspectRatio:false,devicePixelRatio:2,plugins:{legend:{position:'bottom',labels:{usePointStyle:true,boxWidth:8,padding:14}},tooltip:{backgroundColor:'#01302A',titleColor:'#FFF8ED',bodyColor:'#FFF8ED',padding:10,cornerRadius:8}}};
 function showPage(evt,id){document.querySelectorAll('.page').forEach(p=>p.style.display='none');document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));document.getElementById(id).style.display='block';evt.currentTarget.classList.add('active');}
 function rotulo(k){const p=k.split('-');return MESES[+p[1]-1]+'/'+p[0];}
-function novoChart(id,cfg){if(charts[id])charts[id].destroy();charts[id]=new Chart(document.getElementById(id),cfg);}
+function novoChart(id,cfg){try{if(charts[id])charts[id].destroy();charts[id]=new Chart(document.getElementById(id),cfg);}catch(e){}}
 function norm(v){if(!v)return '';return v.toString().trim().toUpperCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'');}
 function contar(arr,ch,top){const m={};arr.forEach(d=>{const v=norm(d[ch]);if(v)m[v]=(m[v]||0)+1;});return Object.entries(m).sort((a,b)=>b[1]-a[1]).slice(0,top||8);}
 function aplicarFiltro(){filtros.mes=document.getElementById('fMes').value;filtros.motivo=document.getElementById('fMotivo').value;filtros.atend=document.getElementById('fAtend').value;filtros.canal=document.getElementById('fCanal').value;renderAll();}
@@ -194,6 +199,7 @@ function filtrar(){return DADOS.filter(d=>{const mesOK=!filtros.mes||d.mesKey===
 function montarFiltros(){const mes=document.getElementById('fMes');let opts='<option value="">Todos os meses</option>';for(let m=1;m&lt;=12;m++){const k='2026-'+String(m).padStart(2,'0');opts+='<option value="'+k+'">'+rotulo(k)+'</option>';}mes.innerHTML=opts;const opt=(id,ch)=>{const s=document.getElementById(id);s.innerHTML='<option value="">Todos</option>'+[...new Set(DADOS.map(d=>norm(d[ch])).filter(Boolean))].sort().map(v=>'<option value="'+v+'">'+v+'</option>').join('');};opt('fMotivo','motivo');opt('fAtend','atend');opt('fCanal','canal');}
 function limpar(){filtros={mes:'',motivo:'',atend:'',canal:''};document.getElementById('fMes').value='';document.getElementById('fMotivo').value='';document.getElementById('fAtend').value='';document.getElementById('fCanal').value='';renderAll();}
 function renderAll(){
+  try{
   const dados=filtrar();
   const st=document.getElementById('status');
   document.getElementById('kTotal').textContent=dados.length.toLocaleString('pt-BR');
@@ -213,8 +219,8 @@ function renderAll(){
     const can=contar(dados,'canal',5);novoChart('cCanais',{type:'pie',data:{labels:can.map(x=>x[0]),datasets:[{data:can.map(x=>x[1]),backgroundColor:CORES,borderWidth:2,borderColor:'#fff'}]},options:baseOpts});
     const at=contar(dados,'atend',6);novoChart('cAtend',{type:'bar',data:{labels:at.map(x=>x[0]),datasets:[{label:'Total',data:at.map(x=>x[1]),backgroundColor:CORES,borderRadius:6}]},options:baseOpts});novoChart('cEquipe',{type:'pie',data:{labels:at.map(x=>x[0]),datasets:[{data:at.map(x=>x[1]),backgroundColor:CORES}]},options:baseOpts});
     const hrs={};dados.forEach(d=>{const h=String(d.hora).split(':')[0];if(h)hrs[h]=(hrs[h]||0)+1;});const ha=Object.keys(hrs).sort((a,b)=>+a-+b).map(h=>({h:h+'h',v:hrs[h]}));novoChart('cHora',{type:'line',data:{labels:ha.map(x=>x.h),datasets:[{label:'Volume',data:ha.map(x=>x.v),borderColor:'#C9A227',backgroundColor:'rgba(201,162,39,.15)',fill:true,tension:.4,pointRadius:4}]},options:baseOpts});
-    // GRÁFICO DE CONTATOS POR DIA - AGORA MOSTRA AS DATAS NO EIXO X
-    const diasA={};dados.forEach(d=>{const c=d.data;diasA[c]=(diasA[c]||0)+1;});const da=Object.keys(diasA).sort().map(k=>({l:k,v:diasA[k]}));novoChart('cDia',{type:'line',data:{labels:da.map(x=>x.l),datasets:[{label:'Atendimentos',data:da.map(x=>x.v),borderColor:'#01302A',backgroundColor:'rgba(1,48,42,.10)',fill:true,tension:.35,pointRadius:2}]},options:baseOpts});
+    // CONTATOS POR DIA - EIXO X COM DATAS (dd/mm)
+    const diasA={};dados.forEach(d=>{const c=d.data.slice(0,5);diasA[c]=(diasA[c]||0)+1;});const da=Object.keys(diasA).sort().map(k=>({l:k,v:diasA[k]}));novoChart('cDia',{type:'line',data:{labels:da.map(x=>x.l),datasets:[{label:'Atendimentos',data:da.map(x=>x.v),borderColor:'#01302A',backgroundColor:'rgba(1,48,42,.10)',fill:true,tension:.35,pointRadius:2}]},options:baseOpts});
     const cat=contar(dados,'categoria',8);novoChart('cCat',{type:'bar',options:Object.assign({},baseOpts,{indexAxis:'y'}),data:{labels:cat.map(x=>x[0]),datasets:[{label:'Qtd',data:cat.map(x=>x[1]),backgroundColor:'rgba(1,48,42,.85)',borderRadius:6}]}});
     const sub=contar(dados,'sub',8);novoChart('cSub',{type:'bar',data:{labels:sub.map(x=>x[0]),datasets:[{label:'Ocorrências',data:sub.map(x=>x[1]),backgroundColor:'#C9A227',borderRadius:6}]},options:baseOpts});
     const ros=contar(dados,'motivo',5);novoChart('cRosca',{type:'doughnut',data:{labels:ros.map(x=>x[0]),datasets:[{data:ros.map(x=>x[1]),backgroundColor:CORES,borderWidth:2,borderColor:'#fff'}]},options:Object.assign({},baseOpts,{cutout:'58%'})});
@@ -228,7 +234,7 @@ function renderAll(){
     novoChart('cAtend',{type:'bar',data:{labels:AGREG.atend.labels,datasets:[{label:'Total',data:AGREG.atend.data,backgroundColor:CORES,borderRadius:6}]},options:baseOpts});
     novoChart('cEquipe',{type:'pie',data:{labels:AGREG.atend.labels,datasets:[{data:[60,38,2],backgroundColor:CORES}]},options:baseOpts});
     novoChart('cHora',{type:'line',data:{labels:AGREG.hora.labels,datasets:[{label:'Volume',data:AGREG.hora.data,borderColor:'#C9A227',backgroundColor:'rgba(201,162,39,.15)',fill:true,tension:.4,pointRadius:4}]},options:baseOpts});
-    // GRÁFICO DE CONTATOS POR DIA - MOSTRA AS DATAS NO EIXO X (dados de exemplo)
+    // CONTATOS POR DIA - EIXO X COM DATAS (dd/mm, dados de exemplo)
     novoChart('cDia',{type:'line',data:{labels:AGREG.dia.labels,datasets:[{label:'Atendimentos',data:AGREG.dia.data,borderColor:'#01302A',backgroundColor:'rgba(1,48,42,.10)',fill:true,tension:.35,pointRadius:2}]},options:baseOpts});
     novoChart('cCat',{type:'bar',options:Object.assign({},baseOpts,{indexAxis:'y'}),data:{labels:AGREG.cat.labels,datasets:[{label:'Qtd',data:AGREG.cat.data,backgroundColor:'rgba(1,48,42,.85)',borderRadius:6}]}});
     novoChart('cSub',{type:'bar',data:{labels:AGREG.sub.labels,datasets:[{label:'Ocorrências',data:AGREG.sub.data,backgroundColor:'#C9A227',borderRadius:6}]},options:baseOpts});
@@ -238,12 +244,14 @@ function renderAll(){
     novoChart('cSemana',{type:'line',data:{labels:AGREG.semana.labels,datasets:[{label:'Julho',data:AGREG.semana.data,borderColor:'#01302A',tension:.4}]},options:baseOpts});
     document.getElementById('tabelaMes').innerHTML='<thead><tr><th>Métrica</th><th>Julho</th><th>Agosto</th><th>Tendência</th></tr></thead><tbody><tr><td>Total de Atendimentos</td><td>741</td><td>25</td><td class="down">Em andamento</td></tr><tr><td>Dúvidas</td><td>451</td><td>8</td><td>-</td></tr><tr><td>Trocas</td><td>230</td><td>12</td><td class="up">Crescendo</td></tr><tr><td>Envios</td><td>131</td><td>5</td><td>-</td></tr><tr><td>Canal WhatsApp</td><td>704</td><td>25</td><td class="up">Estável</td></tr></tbody>';
   }
+  }catch(e){}
 }
 function parseCSV(txt){const rows=[];let row=[],cur='',inQ=false;for(let i=0;i<txt.length;i++){const c=txt[i];if(inQ){if(c==='"'){if(txt[i+1]==='"'){cur+='"';i++;}else inQ=false;}else cur+=c;}else if(c==='"')inQ=true;else if(c===','){row.push(cur);cur='';}else if(c==='\n'){row.push(cur);rows.push(row);row=[];cur='';}else if(c!=='\r')cur+=c;}if(cur!==''||row.length){row.push(cur);rows.push(row);}return rows.filter(r=>r.some(x=>x.trim()!==''));}
 function parseLinha(r){if(r.length&lt;8)return null;const m=(r[0]||'').match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);if(!m)return null;const dia=+m[1],mes=+m[2],ano=+m[3];if(ano&lt;2026||mes&lt;1||mes>12||dia&lt;1||dia>31)return null;const dd=String(dia).padStart(2,'0'),mm=String(mes).padStart(2,'0');return{data:dd+'/'+mm+'/'+ano,hora:(r[1]||'').trim(),canal:(r[2]||'').trim().toUpperCase(),atend:(r[3]||'').trim().toUpperCase(),antigo:(r[4]||'').trim().toUpperCase(),motivo:(r[7]||'').trim(),categoria:(r[8]||'').trim(),mesKey:ano+'-'+mm};}
 async function tentar(url){const res=await fetch(url);if(!res.ok)throw new Error('HTTP '+res.status);return res.text();}
 async function carregar(){const st=document.getElementById('status');try{let txt=await tentar(getSheetUrl());const linhas=parseCSV(txt);const registros=linhas.slice(1).map(parseLinha).filter(Boolean);if(registros.length&lt;3)throw new Error('Poucos dados');DADOS=registros;live=true;montarFiltros();st.textContent='Dados ao vivo ('+registros.length+' registros)';st.className='ok';}catch(e){DADOS=EMBED.slice();live=false;montarFiltros();st.textContent='Dados de exemplo';st.className='demo';}renderAll();}
 montarFiltros();renderAll();carregar();setInterval(carregar,60000);
+}
 </script>
 </body>
 </html>
