@@ -12,7 +12,6 @@
 body{background:var(--bg);color:var(--text)}
 header{background:var(--primary);color:var(--bg);padding:14px 4%;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100;box-shadow:0 2px 12px rgba(0,0,0,.25)}
 .brand{display:flex;align-items:center;gap:14px}
-/* CAMPO DE UPLOAD RETANGULAR DA LOGO */
 .logo-upload{position:relative;width:120px;height:56px;border-radius:10px;background:rgba(255,255,255,.12);border:2px dashed rgba(255,255,255,.4);display:flex;align-items:center;justify-content:center;overflow:hidden;cursor:pointer;transition:.3s}
 .logo-upload:hover{background:rgba(255,255,255,.2);border-color:var(--accent)}
 .logo-upload img{width:100%;height:100%;object-fit:contain;display:none}
@@ -149,7 +148,7 @@ canvas{width:100%!important;height:100%!important}
 <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.2.0/dist/chartjs-plugin-datalabels.min.js"></script>
 <script>
 Chart.register(ChartDataLabels);
-// ===== UPLOAD DA LOGO (retangular, salva no navegador) =====
+// ===== UPLOAD DA LOGO =====
 const logoInput=document.getElementById('logoInput');
 const logoImg=document.getElementById('logoImg');
 const logoPlaceholder=document.getElementById('logoPlaceholder');
@@ -214,7 +213,8 @@ function renderAll(){
     const can=contar(dados,'canal',5);novoChart('cCanais',{type:'pie',data:{labels:can.map(x=>x[0]),datasets:[{data:can.map(x=>x[1]),backgroundColor:CORES,borderWidth:2,borderColor:'#fff'}]},options:baseOpts});
     const at=contar(dados,'atend',6);novoChart('cAtend',{type:'bar',data:{labels:at.map(x=>x[0]),datasets:[{label:'Total',data:at.map(x=>x[1]),backgroundColor:CORES,borderRadius:6}]},options:baseOpts});novoChart('cEquipe',{type:'pie',data:{labels:at.map(x=>x[0]),datasets:[{data:at.map(x=>x[1]),backgroundColor:CORES}]},options:baseOpts});
     const hrs={};dados.forEach(d=>{const h=String(d.hora).split(':')[0];if(h)hrs[h]=(hrs[h]||0)+1;});const ha=Object.keys(hrs).sort((a,b)=>+a-+b).map(h=>({h:h+'h',v:hrs[h]}));novoChart('cHora',{type:'line',data:{labels:ha.map(x=>x.h),datasets:[{label:'Volume',data:ha.map(x=>x.v),borderColor:'#C9A227',backgroundColor:'rgba(201,162,39,.15)',fill:true,tension:.4,pointRadius:4}]},options:baseOpts});
-    const diasA={};dados.forEach(d=>{const c=d.mesKey+'-'+d.data;diasA[c]=(diasA[c]||0)+1;});const da=Object.keys(diasA).sort().map(k=>({l:diasA[k]+' contatos',v:diasA[k]}));novoChart('cDia',{type:'line',data:{labels:da.map(x=>x.l),datasets:[{label:'Atendimentos',data:da.map(x=>x.v),borderColor:'#01302A',backgroundColor:'rgba(1,48,42,.10)',fill:true,tension:.35,pointRadius:2}]},options:baseOpts});
+    // GRÁFICO DE CONTATOS POR DIA - AGORA MOSTRA AS DATAS NO EIXO X
+    const diasA={};dados.forEach(d=>{const c=d.data;diasA[c]=(diasA[c]||0)+1;});const da=Object.keys(diasA).sort().map(k=>({l:k,v:diasA[k]}));novoChart('cDia',{type:'line',data:{labels:da.map(x=>x.l),datasets:[{label:'Atendimentos',data:da.map(x=>x.v),borderColor:'#01302A',backgroundColor:'rgba(1,48,42,.10)',fill:true,tension:.35,pointRadius:2}]},options:baseOpts});
     const cat=contar(dados,'categoria',8);novoChart('cCat',{type:'bar',options:Object.assign({},baseOpts,{indexAxis:'y'}),data:{labels:cat.map(x=>x[0]),datasets:[{label:'Qtd',data:cat.map(x=>x[1]),backgroundColor:'rgba(1,48,42,.85)',borderRadius:6}]}});
     const sub=contar(dados,'sub',8);novoChart('cSub',{type:'bar',data:{labels:sub.map(x=>x[0]),datasets:[{label:'Ocorrências',data:sub.map(x=>x[1]),backgroundColor:'#C9A227',borderRadius:6}]},options:baseOpts});
     const ros=contar(dados,'motivo',5);novoChart('cRosca',{type:'doughnut',data:{labels:ros.map(x=>x[0]),datasets:[{data:ros.map(x=>x[1]),backgroundColor:CORES,borderWidth:2,borderColor:'#fff'}]},options:Object.assign({},baseOpts,{cutout:'58%'})});
@@ -228,6 +228,7 @@ function renderAll(){
     novoChart('cAtend',{type:'bar',data:{labels:AGREG.atend.labels,datasets:[{label:'Total',data:AGREG.atend.data,backgroundColor:CORES,borderRadius:6}]},options:baseOpts});
     novoChart('cEquipe',{type:'pie',data:{labels:AGREG.atend.labels,datasets:[{data:[60,38,2],backgroundColor:CORES}]},options:baseOpts});
     novoChart('cHora',{type:'line',data:{labels:AGREG.hora.labels,datasets:[{label:'Volume',data:AGREG.hora.data,borderColor:'#C9A227',backgroundColor:'rgba(201,162,39,.15)',fill:true,tension:.4,pointRadius:4}]},options:baseOpts});
+    // GRÁFICO DE CONTATOS POR DIA - MOSTRA AS DATAS NO EIXO X (dados de exemplo)
     novoChart('cDia',{type:'line',data:{labels:AGREG.dia.labels,datasets:[{label:'Atendimentos',data:AGREG.dia.data,borderColor:'#01302A',backgroundColor:'rgba(1,48,42,.10)',fill:true,tension:.35,pointRadius:2}]},options:baseOpts});
     novoChart('cCat',{type:'bar',options:Object.assign({},baseOpts,{indexAxis:'y'}),data:{labels:AGREG.cat.labels,datasets:[{label:'Qtd',data:AGREG.cat.data,backgroundColor:'rgba(1,48,42,.85)',borderRadius:6}]}});
     novoChart('cSub',{type:'bar',data:{labels:AGREG.sub.labels,datasets:[{label:'Ocorrências',data:AGREG.sub.data,backgroundColor:'#C9A227',borderRadius:6}]},options:baseOpts});
