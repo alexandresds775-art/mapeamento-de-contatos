@@ -12,8 +12,13 @@
 body{background:var(--bg);color:var(--text)}
 header{background:var(--primary);color:var(--bg);padding:14px 4%;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100;box-shadow:0 2px 12px rgba(0,0,0,.25)}
 .brand{display:flex;align-items:center;gap:14px}
-.logo{width:56px;height:56px;border-radius:50%;background:var(--bg);display:flex;align-items:center;justify-content:center;overflow:hidden;box-shadow:0 2px 8px rgba(0,0,0,.1)}
-.logo img{width:44px;height:44px;object-fit:contain}
+/* CAMPO DE UPLOAD RETANGULAR DA LOGO */
+.logo-upload{position:relative;width:120px;height:56px;border-radius:10px;background:rgba(255,255,255,.12);border:2px dashed rgba(255,255,255,.4);display:flex;align-items:center;justify-content:center;overflow:hidden;cursor:pointer;transition:.3s}
+.logo-upload:hover{background:rgba(255,255,255,.2);border-color:var(--accent)}
+.logo-upload img{width:100%;height:100%;object-fit:contain;display:none}
+.logo-upload .placeholder{font-size:10px;color:rgba(255,255,255,.8);text-align:center;line-height:1.3;padding:4px}
+.logo-upload input[type=file]{position:absolute;inset:0;opacity:0;cursor:pointer}
+.logo-upload .btn-remove{position:absolute;top:2px;right:2px;background:rgba(192,57,43,.9);color:#fff;border:none;border-radius:50%;width:18px;height:18px;font-size:11px;line-height:1;cursor:pointer;display:none;z-index:2}
 .brand h1{font-size:19px;letter-spacing:3px;line-height:1.1}
 .brand p{font-size:10px;letter-spacing:5px;opacity:.85}
 .hinfo{text-align:right;font-size:12px}
@@ -55,7 +60,12 @@ canvas{width:100%!important;height:100%!important}
 
 <header>
   <div class="brand">
-    <div class="logo"><img src="logo-infinity.png" alt="Infinity Piercing"></div>
+    <div class="logo-upload" id="logoBox">
+      <img id="logoImg" alt="Logo">
+      <span class="placeholder" id="logoPlaceholder">Clique para<br>enviar logo</span>
+      <input type="file" id="logoInput" accept="image/*">
+      <button class="btn-remove" id="logoRemove" onclick="removerLogo(event)">×</button>
+    </div>
     <div><h1>INFINITY</h1><p>PIERCING</p></div>
   </div>
   <div class="hinfo">
@@ -139,8 +149,17 @@ canvas{width:100%!important;height:100%!important}
 <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.2.0/dist/chartjs-plugin-datalabels.min.js"></script>
 <script>
 Chart.register(ChartDataLabels);
+// ===== UPLOAD DA LOGO (retangular, salva no navegador) =====
+const logoInput=document.getElementById('logoInput');
+const logoImg=document.getElementById('logoImg');
+const logoPlaceholder=document.getElementById('logoPlaceholder');
+const logoRemove=document.getElementById('logoRemove');
+function carregarLogoSalva(){const s=localStorage.getItem('infinityLogo');if(s){logoImg.src=s;logoImg.style.display='block';logoPlaceholder.style.display='none';logoRemove.style.display='block';}}
+logoInput.addEventListener('change',function(e){const file=e.target.files[0];if(!file)return;const reader=new FileReader();reader.onload=function(ev){const data=ev.target.result;logoImg.src=data;logoImg.style.display='block';logoPlaceholder.style.display='none';logoRemove.style.display='block';localStorage.setItem('infinityLogo',data);};reader.readAsDataURL(file);});
+function removerLogo(ev){ev.stopPropagation();localStorage.removeItem('infinityLogo');logoImg.style.display='none';logoPlaceholder.style.display='block';logoRemove.style.display='none';logoInput.value='';}
+carregarLogoSalva();
+// ===== FIM UPLOAD LOGO =====
 const SHEET_BASE='https://docs.google.com/spreadsheets/d/e/2PACX-1vT-CwUw9j29B4hjRm7uu2Ss6yzakIj2IoErFtuvIqJSrW87jU0QKHkyjbO1nXlB1LJirVBHDy4TUAEU/pub?gid=0&single=true&output=csv';
-// FUNÇÃO QUE GERA LINK COM TIMESTAMP PARA EVITAR CACHE - CORREÇÃO DOS DADOS ESTACIONADOS
 function getSheetUrl(){return SHEET_BASE+'&t='+Date.now();}
 const EMBED=[
 {data:'01/08/2026',hora:'10:15',canal:'WHATSAPP',atend:'LARISSA',antigo:'SIM',motivo:'Troca',categoria:'Resolução de Troca',mesKey:'2026-08'},
@@ -173,7 +192,7 @@ function norm(v){if(!v)return '';return v.toString().trim().toUpperCase().normal
 function contar(arr,ch,top){const m={};arr.forEach(d=>{const v=norm(d[ch]);if(v)m[v]=(m[v]||0)+1;});return Object.entries(m).sort((a,b)=>b[1]-a[1]).slice(0,top||8);}
 function aplicarFiltro(){filtros.mes=document.getElementById('fMes').value;filtros.motivo=document.getElementById('fMotivo').value;filtros.atend=document.getElementById('fAtend').value;filtros.canal=document.getElementById('fCanal').value;renderAll();}
 function filtrar(){return DADOS.filter(d=>{const mesOK=!filtros.mes||d.mesKey===filtros.mes;const motOK=!filtros.motivo||norm(d.motivo)===filtros.motivo;const atOK=!filtros.atend||norm(d.atend)===filtros.atend;const canOK=!filtros.canal||norm(d.canal)===filtros.canal;return mesOK&&motOK&&atOK&&canOK;});}
-function montarFiltros(){const mes=document.getElementById('fMes');let opts='<option value="">Todos os meses</option>';for(let m=1;m<=12;m++){const k='2026-'+String(m).padStart(2,'0');opts+='<option value="'+k+'">'+rotulo(k)+'</option>';}mes.innerHTML=opts;const opt=(id,ch)=>{const s=document.getElementById(id);s.innerHTML='<option value="">Todos</option>'+[...new Set(DADOS.map(d=>norm(d[ch])).filter(Boolean))].sort().map(v=>'<option value="'+v+'">'+v+'</option>').join('');};opt('fMotivo','motivo');opt('fAtend','atend');opt('fCanal','canal');}
+function montarFiltros(){const mes=document.getElementById('fMes');let opts='<option value="">Todos os meses</option>';for(let m=1;m&lt;=12;m++){const k='2026-'+String(m).padStart(2,'0');opts+='<option value="'+k+'">'+rotulo(k)+'</option>';}mes.innerHTML=opts;const opt=(id,ch)=>{const s=document.getElementById(id);s.innerHTML='<option value="">Todos</option>'+[...new Set(DADOS.map(d=>norm(d[ch])).filter(Boolean))].sort().map(v=>'<option value="'+v+'">'+v+'</option>').join('');};opt('fMotivo','motivo');opt('fAtend','atend');opt('fCanal','canal');}
 function limpar(){filtros={mes:'',motivo:'',atend:'',canal:''};document.getElementById('fMes').value='';document.getElementById('fMotivo').value='';document.getElementById('fAtend').value='';document.getElementById('fCanal').value='';renderAll();}
 function renderAll(){
   const dados=filtrar();
@@ -220,27 +239,10 @@ function renderAll(){
   }
 }
 function parseCSV(txt){const rows=[];let row=[],cur='',inQ=false;for(let i=0;i<txt.length;i++){const c=txt[i];if(inQ){if(c==='"'){if(txt[i+1]==='"'){cur+='"';i++;}else inQ=false;}else cur+=c;}else if(c==='"')inQ=true;else if(c===','){row.push(cur);cur='';}else if(c==='\n'){row.push(cur);rows.push(row);row=[];cur='';}else if(c!=='\r')cur+=c;}if(cur!==''||row.length){row.push(cur);rows.push(row);}return rows.filter(r=>r.some(x=>x.trim()!==''));}
-function parseLinha(r){if(r.length<8)return null;const m=(r[0]||'').match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);if(!m)return null;const dia=+m[1],mes=+m[2],ano=+m[3];if(ano<2026||mes<1||mes>12||dia<1||dia>31)return null;const dd=String(dia).padStart(2,'0'),mm=String(mes).padStart(2,'0');return{data:dd+'/'+mm+'/'+ano,hora:(r[1]||'').trim(),canal:(r[2]||'').trim().toUpperCase(),atend:(r[3]||'').trim().toUpperCase(),antigo:(r[4]||'').trim().toUpperCase(),motivo:(r[7]||'').trim(),categoria:(r[8]||'').trim(),mesKey:ano+'-'+mm};}
+function parseLinha(r){if(r.length&lt;8)return null;const m=(r[0]||'').match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);if(!m)return null;const dia=+m[1],mes=+m[2],ano=+m[3];if(ano&lt;2026||mes&lt;1||mes>12||dia&lt;1||dia>31)return null;const dd=String(dia).padStart(2,'0'),mm=String(mes).padStart(2,'0');return{data:dd+'/'+mm+'/'+ano,hora:(r[1]||'').trim(),canal:(r[2]||'').trim().toUpperCase(),atend:(r[3]||'').trim().toUpperCase(),antigo:(r[4]||'').trim().toUpperCase(),motivo:(r[7]||'').trim(),categoria:(r[8]||'').trim(),mesKey:ano+'-'+mm};}
 async function tentar(url){const res=await fetch(url);if(!res.ok)throw new Error('HTTP '+res.status);return res.text();}
-async function carregar(){
-  const st=document.getElementById('status');
-  try{
-    // USA O LINK COM TIMESTAMP PARA EVITAR CACHE E BUSCAR DADOS NOVOS
-    let txt=await tentar(getSheetUrl());
-    const linhas=parseCSV(txt);
-    const registros=linhas.slice(1).map(parseLinha).filter(Boolean);
-    if(registros.length<3)throw new Error('Poucos dados');
-    DADOS=registros;live=true;montarFiltros();
-    st.textContent='Dados ao vivo ('+registros.length+' registros)';
-    st.className='ok';
-  }catch(e){
-    DADOS=EMBED.slice();live=false;montarFiltros();
-    st.textContent='Dados de exemplo';
-    st.className='demo';
-  }
-  renderAll();
-}
-montarFiltros();renderAll();carregar();setInterval(carregar,60000); // atualiza a cada 1 minuto
+async function carregar(){const st=document.getElementById('status');try{let txt=await tentar(getSheetUrl());const linhas=parseCSV(txt);const registros=linhas.slice(1).map(parseLinha).filter(Boolean);if(registros.length&lt;3)throw new Error('Poucos dados');DADOS=registros;live=true;montarFiltros();st.textContent='Dados ao vivo ('+registros.length+' registros)';st.className='ok';}catch(e){DADOS=EMBED.slice();live=false;montarFiltros();st.textContent='Dados de exemplo';st.className='demo';}renderAll();}
+montarFiltros();renderAll();carregar();setInterval(carregar,60000);
 </script>
 </body>
 </html>
