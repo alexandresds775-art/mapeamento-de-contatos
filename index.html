@@ -11,8 +11,8 @@
 body{background:var(--bg);color:var(--text)}
 header{background:var(--primary);color:var(--bg);padding:14px 4%;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100;box-shadow:0 2px 12px rgba(0,0,0,.25)}
 .brand{display:flex;align-items:center;gap:14px}
-.logo{width:52px;height:52px;border-radius:50%;background:var(--bg);display:flex;align-items:center;justify-content:center;overflow:hidden}
-.logo svg{width:34px;height:34px}
+.logo{width:54px;height:54px;border-radius:50%;background:var(--bg);display:flex;align-items:center;justify-content:center;overflow:hidden}
+.logo svg{width:40px;height:40px}
 .brand h1{font-size:19px;letter-spacing:3px;line-height:1.1}
 .brand p{font-size:10px;letter-spacing:5px;opacity:.85}
 .hinfo{text-align:right;font-size:12px}
@@ -55,8 +55,13 @@ canvas{width:100%!important;height:100%!important}
 <header>
   <div class="brand">
     <div class="logo">
-      <svg viewBox="0 0 52 52" fill="none">
-        <path d="M26 26C20 15, 7 15, 7 26C7 37, 20 37, 26 26C32 15, 45 15, 45 26C45 37, 32 37, 26 26Z" stroke="#01302A" stroke-width="3.4" stroke-linecap="round"/>
+      <svg viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <g stroke="#01302A" stroke-width="4" stroke-linecap="round">
+          <path d="M50 50 C42 30 22 32 24 46 C26 62 50 68 50 68 C50 68 74 62 76 46 C78 32 58 30 50 50" transform="rotate(0 50 50)"/>
+          <path d="M50 50 C42 30 22 32 24 46 C26 62 50 68 50 68 C50 68 74 62 76 46 C78 32 58 30 50 50" transform="rotate(90 50 50)"/>
+          <path d="M50 50 C42 30 22 32 24 46 C26 62 50 68 50 68 C50 68 74 62 76 46 C78 32 58 30 50 50" transform="rotate(180 50 50)"/>
+          <path d="M50 50 C42 30 22 32 24 46 C26 62 50 68 50 68 C50 68 74 62 76 46 C78 32 58 30 50 50" transform="rotate(270 50 50)"/>
+        </g>
       </svg>
     </div>
     <div><h1>INFINITY</h1><p>PIERCING</p></div>
@@ -172,7 +177,7 @@ function novoChart(id,cfg){if(charts[id])charts[id].destroy();charts[id]=new Cha
 function contar(arr,ch,top){const m={};arr.forEach(d=>{const v=(d[ch]||'').trim();if(v)m[v]=(m[v]||0)+1;});return Object.entries(m).sort((a,b)=>b[1]-a[1]).slice(0,top||8);}
 function filtrar(){return DADOS.filter(d=>{const mesOK=!filtros.mes||d.mesKey===filtros.mes;const motOK=!filtros.motivo||d.motivo===filtros.motivo;const atOK=!filtros.atend||d.atend===filtros.atend;const canOK=!filtros.canal||d.canal===filtros.canal;return mesOK&&motOK&&atOK&&canOK;});}
 function aplicarFiltroMes(){filtros.mes=document.getElementById('fMes').value;renderAll();}
-function montarFiltros(){const mes=document.getElementById('fMes');let opts='<option value="">Todos os meses</option>';for(let m=1;m&lt;=12;m++){const k='2026-'+String(m).padStart(2,'0');opts+='<option value="'+k+'">'+rotulo(k)+'</option>';}mes.innerHTML=opts;const opt=(id,ch)=>{const s=document.getElementById(id);s.innerHTML='<option value="">Todos</option>'+[...new Set(DADOS.map(d=>d[ch]).filter(Boolean))].sort().map(v=>'<option value="'+v+'">'+v+'</option>').join('');};opt('fMotivo','motivo');opt('fAtend','atend');opt('fCanal','canal');}
+function montarFiltros(){const mes=document.getElementById('fMes');let opts='<option value="">Todos os meses</option>';for(let m=1;m<=12;m++){const k='2026-'+String(m).padStart(2,'0');opts+='<option value="'+k+'">'+rotulo(k)+'</option>';}mes.innerHTML=opts;const opt=(id,ch)=>{const s=document.getElementById(id);s.innerHTML='<option value="">Todos</option>'+[...new Set(DADOS.map(d=>d[ch]).filter(Boolean))].sort().map(v=>'<option value="'+v+'">'+v+'</option>').join('');};opt('fMotivo','motivo');opt('fAtend','atend');opt('fCanal','canal');}
 function limpar(){filtros={mes:'',motivo:'',atend:'',canal:''};document.getElementById('fMes').value='';document.getElementById('fMotivo').value='';document.getElementById('fAtend').value='';document.getElementById('fCanal').value='';renderAll();}
 function renderAll(){
   const dados=filtrar();
@@ -180,7 +185,7 @@ function renderAll(){
   document.getElementById('kTotal').textContent=dados.length.toLocaleString('pt-BR');
   document.getElementById('kTotalSub').textContent=live?'dados ao vivo':'dados de exemplo';
   const selMes=filtros.mes;
-  if(selMes){document.getElementById('kMes').textContent=dados.filter(d=>d.mesKey===selMes).length.toLocaleString('pt-BR');document.getElementById('kMesSub').textContent=rotulo(selMes);}
+  if(selMes){document.getElementById('kMes').textContent=dados.length.toLocaleString('pt-BR');document.getElementById('kMesSub').textContent=rotulo(selMes);}
   else{document.getElementById('kMes').textContent='-';document.getElementById('kMesSub').textContent='selecione um mês';}
   const dias=new Set(dados.map(d=>d.mesKey+'-'+d.data.slice(0,2)));
   const media=dias.size?Math.round(dados.length/dias.size*10)/10:0;
@@ -220,9 +225,9 @@ function renderAll(){
   }
 }
 function parseCSV(txt){const rows=[];let row=[],cur='',inQ=false;for(let i=0;i<txt.length;i++){const c=txt[i];if(inQ){if(c==='"'){if(txt[i+1]==='"'){cur+='"';i++;}else inQ=false;}else cur+=c;}else if(c==='"')inQ=true;else if(c===','){row.push(cur);cur='';}else if(c==='\n'){row.push(cur);rows.push(row);row=[];cur='';}else if(c!=='\r')cur+=c;}if(cur!==''||row.length){row.push(cur);rows.push(row);}return rows.filter(r=>r.some(x=>x.trim()!==''));}
-function parseLinha(r){if(r.length&lt;8)return null;const m=(r[0]||'').match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);if(!m)return null;const dia=+m[1],mes=+m[2],ano=+m[3];if(ano&lt;2026||mes&lt;1||mes>12||dia&lt;1||dia>31)return null;const dd=String(dia).padStart(2,'0'),mm=String(mes).padStart(2,'0');return{data:dd+'/'+mm+'/'+ano,hora:(r[1]||'').trim(),canal:(r[2]||'').trim().toUpperCase(),atend:(r[3]||'').trim().toUpperCase(),antigo:(r[4]||'').trim().toUpperCase(),motivo:(r[7]||'').trim(),categoria:(r[8]||'').trim(),mesKey:ano+'-'+mm};}
+function parseLinha(r){if(r.length<8)return null;const m=(r[0]||'').match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);if(!m)return null;const dia=+m[1],mes=+m[2],ano=+m[3];if(ano<2026||mes<1||mes>12||dia<1||dia>31)return null;const dd=String(dia).padStart(2,'0'),mm=String(mes).padStart(2,'0');return{data:dd+'/'+mm+'/'+ano,hora:(r[1]||'').trim(),canal:(r[2]||'').trim().toUpperCase(),atend:(r[3]||'').trim().toUpperCase(),antigo:(r[4]||'').trim().toUpperCase(),motivo:(r[7]||'').trim(),categoria:(r[8]||'').trim(),mesKey:ano+'-'+mm};}
 async function tentar(url){const res=await fetch(url);if(!res.ok)throw new Error('HTTP '+res.status);return res.text();}
-async function carregar(){const st=document.getElementById('status');try{let txt;try{txt=await tentar(SHEET_CSV);}catch(e){txt=await tentar(SHEET_PROXY);}const linhas=parseCSV(txt);const registros=linhas.slice(1).map(parseLinha).filter(Boolean);if(registros.length&lt;3)throw new Error('Poucos dados');DADOS=registros;live=true;montarFiltros();st.textContent='Dados ao vivo ('+registros.length+' registros)';st.className='ok';}catch(e){DADOS=EMBED.slice();live=false;montarFiltros();st.textContent='Dados de exemplo';st.className='demo';}renderAll();}
+async function carregar(){const st=document.getElementById('status');try{let txt;try{txt=await tentar(SHEET_CSV);}catch(e){txt=await tentar(SHEET_PROXY);}const linhas=parseCSV(txt);const registros=linhas.slice(1).map(parseLinha).filter(Boolean);if(registros.length<3)throw new Error('Poucos dados');DADOS=registros;live=true;montarFiltros();st.textContent='Dados ao vivo ('+registros.length+' registros)';st.className='ok';}catch(e){DADOS=EMBED.slice();live=false;montarFiltros();st.textContent='Dados de exemplo';st.className='demo';}renderAll();}
 montarFiltros();renderAll();carregar();setInterval(carregar,300000);
 </script>
 </body>
