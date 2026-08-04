@@ -33,6 +33,7 @@ nav::-webkit-scrollbar{display:none}
 .sel-grupo{display:flex;flex-direction:column;gap:4px}
 .sel-grupo label{font-size:10px;font-weight:800;color:var(--primary);text-transform:uppercase;letter-spacing:.5px}
 select{padding:9px 12px;border-radius:9px;border:1.5px solid var(--line);background:var(--bg);color:var(--primary);font-weight:600;font-size:12px;min-width:150px}
+input[type=date]{padding:8px 10px;border-radius:9px;border:1.5px solid var(--line);background:var(--bg);color:var(--primary);font-weight:600;font-size:12px;min-width:140px}
 .btn{padding:9px 18px;border-radius:9px;border:none;background:var(--accent);color:var(--primary);font-weight:800;font-size:12px;cursor:pointer}
 main{padding:26px 4%;max-width:1440px;margin:0 auto}
 .kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:18px;margin-bottom:24px}
@@ -83,6 +84,8 @@ canvas{width:100%!important;height:100%!important}
 
 <div class="filtros">
   <div class="sel-grupo"><label>Mês</label><select id="fMes" onchange="aplicarFiltro()"></select></div>
+  <div class="sel-grupo"><label>De</label><input type="date" id="fDe" onchange="aplicarFiltro()"></div>
+  <div class="sel-grupo"><label>Até</label><input type="date" id="fAte" onchange="aplicarFiltro()"></div>
   <div class="sel-grupo"><label>Motivo</label><select id="fMotivo" onchange="aplicarFiltro()"><option value="">Todos</option></select></div>
   <div class="sel-grupo"><label>Atendente</label><select id="fAtend" onchange="aplicarFiltro()"><option value="">Todos</option></select></div>
   <div class="sel-grupo"><label>Canal</label><select id="fCanal" onchange="aplicarFiltro()"><option value="">Todos</option></select></div>
@@ -92,7 +95,7 @@ canvas{width:100%!important;height:100%!important}
 <main>
   <div class="kpis">
     <div class="kpi"><span>Total de Contatos</span><b id="kTotal">-</b><small id="kTotalSub"></small></div>
-    <div class="kpi"><span>Mês Selecionado</span><b id="kMes">-</b><small id="kMesSub">selecione um mês</small></div>
+    <div class="kpi"><span>Período Selecionado</span><b id="kMes">-</b><small id="kMesSub">todos os períodos</small></div>
     <div class="kpi"><span>Média por Dia</span><b id="kMedia">-</b><small>contatos/dia</small></div>
     <div class="kpi"><span>Clientes Antigos</span><b id="kAntigos">-</b><small>base recorrente</small></div>
   </div>
@@ -169,7 +172,7 @@ try{
 })();
 // ===== FIM UPLOAD LOGO =====
 
-// ===== PLUGIN DE RÓTULOS EMBUTIDO (pizza/rosca: rótulo FORA com linha de chamada) =====
+// ===== PLUGIN DE RÓTULOS EMBUTIDO =====
 var dataLabelsPlugin={
   id:'inlineLabels',
   afterDatasetsDraw:function(chart){
@@ -183,7 +186,7 @@ var dataLabelsPlugin={
           for(var k=0;k<ds.data.length;k++){total+=(+ds.data[k]||0);}
           meta.data.forEach(function(el,idx){
             var v=ds.data[idx];
-            if(v===undefined||v===null||(+v)<=0)return;
+            if(v===undefined||v===null||(+v)&lt;=0)return;
             var txt=Number(v).toLocaleString('pt-BR');
             if(type==='pie'||type==='doughnut'){
               var pct=Math.round((+v)/total*100);
@@ -193,14 +196,12 @@ var dataLabelsPlugin={
               var x=el.x+Math.cos(mid)*radius;
               var y=el.y+Math.sin(mid)*radius;
               ctx.save();
-              // linha de chamada
               ctx.strokeStyle='rgba(1,48,42,.4)';
               ctx.lineWidth=1;
               ctx.beginPath();
               ctx.moveTo(el.x+Math.cos(mid)*el.outerRadius,el.y+Math.sin(mid)*el.outerRadius);
               ctx.lineTo(x,y);
               ctx.stroke();
-              // rótulo
               ctx.font='bold 11px Segoe UI, sans-serif';
               ctx.fillStyle='#01302A';
               ctx.textBaseline='middle';
@@ -248,7 +249,7 @@ var AGREG={motivos:{labels:['Dúvidas','Troca','Não identificado','Envio','Cont
 
 var DADOS=EMBED.slice();
 var live=false;
-var filtros={mes:'',motivo:'',atend:'',canal:''};
+var filtros={mes:'',de:'',ate:'',motivo:'',atend:'',canal:''};
 var CORES=['#01302A','#024D44','#036B5E','#048A79','#05A893','#07C6AD','#C9A227','#8D7535'];
 var MESES=['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'];
 var charts={};
@@ -269,8 +270,12 @@ function rotulo(k){var p=k.split('-');return MESES[(+p[1])-1]+'/'+p[0];}
 function novoChart(id,cfg){try{if(charts[id])charts[id].destroy();charts[id]=new Chart(document.getElementById(id),cfg);}catch(e){}}
 function norm(v){if(!v)return '';return v.toString().trim().toUpperCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'');}
 function contar(arr,ch,top){var m={};arr.forEach(function(d){var v=norm(d[ch]);if(v)m[v]=(m[v]||0)+1;});return Object.entries(m).sort(function(a,b){return b[1]-a[1];}).slice(0,top||8);}
+// Converte dd/mm/aaaa para aaaa-mm-dd (comparável)
+function paraISO(d){var p=d.split('/');return p[2]+'-'+p[1]+'-'+p[0];}
 function aplicarFiltro(){
   filtros.mes=document.getElementById('fMes').value;
+  filtros.de=document.getElementById('fDe').value;
+  filtros.ate=document.getElementById('fAte').value;
   filtros.motivo=document.getElementById('fMotivo').value;
   filtros.atend=document.getElementById('fAtend').value;
   filtros.canal=document.getElementById('fCanal').value;
@@ -282,14 +287,18 @@ function filtrar(){
     var motOK=!filtros.motivo||norm(d.motivo)===filtros.motivo;
     var atOK=!filtros.atend||norm(d.atend)===filtros.atend;
     var canOK=!filtros.canal||norm(d.canal)===filtros.canal;
-    return mesOK&&motOK&&atOK&&canOK;
+    // Filtro por período (calendário)
+    var iso=paraISO(d.data);
+    var deOK=!filtros.de||iso>=filtros.de;
+    var ateOK=!filtros.ate||iso<=filtros.ate;
+    return mesOK&&motOK&&atOK&&canOK&&deOK&&ateOK;
   });
 }
 function montarFiltros(){
   try{
     var mes=document.getElementById('fMes');
     var opts='<option value="">Todos os meses</option>';
-    for(var m=1;m<=12;m++){
+    for(var m=1;m&lt;=12;m++){
       var k='2026-'+String(m).padStart(2,'0');
       opts+='<option value="'+k+'">'+rotulo(k)+'</option>';
     }
@@ -307,8 +316,10 @@ function montarFiltros(){
   }catch(e){}
 }
 function limpar(){
-  filtros={mes:'',motivo:'',atend:'',canal:''};
+  filtros={mes:'',de:'',ate:'',motivo:'',atend:'',canal:''};
   document.getElementById('fMes').value='';
+  document.getElementById('fDe').value='';
+  document.getElementById('fAte').value='';
   document.getElementById('fMotivo').value='';
   document.getElementById('fAtend').value='';
   document.getElementById('fCanal').value='';
@@ -320,8 +331,21 @@ function renderAll(){
     var st=document.getElementById('status');
     document.getElementById('kTotal').textContent=dados.length.toLocaleString('pt-BR');
     document.getElementById('kTotalSub').textContent=live?'dados ao vivo':'dados de exemplo';
-    if(filtros.mes){document.getElementById('kMes').textContent=dados.length.toLocaleString('pt-BR');document.getElementById('kMesSub').textContent=rotulo(filtros.mes);}
-    else{document.getElementById('kMes').textContent='-';document.getElementById('kMesSub').textContent='selecione um mês';}
+    // Card de período: mostra intervalo se houver calendário, senão mês
+    if(filtros.de||filtros.ate){
+      var rot='';
+      if(filtros.de&&filtros.ate){rot='De '+filtros.de.split('-').reverse().join('/')+' a '+filtros.ate.split('-').reverse().join('/');}
+      else if(filtros.de){rot='A partir de '+filtros.de.split('-').reverse().join('/');}
+      else{rot='Até '+filtros.ate.split('-').reverse().join('/');}
+      document.getElementById('kMes').textContent=dados.length.toLocaleString('pt-BR');
+      document.getElementById('kMesSub').textContent=rot;
+    }else if(filtros.mes){
+      document.getElementById('kMes').textContent=dados.length.toLocaleString('pt-BR');
+      document.getElementById('kMesSub').textContent=rotulo(filtros.mes);
+    }else{
+      document.getElementById('kMes').textContent='-';
+      document.getElementById('kMesSub').textContent='todos os períodos';
+    }
     var dias=new Set(dados.map(function(d){return d.mesKey+'-'+d.data.slice(0,2);}));
     var media=dias.size?Math.round(dados.length/dias.size*10)/10:0;
     document.getElementById('kMedia').textContent=String(media).replace('.',',');
@@ -344,8 +368,9 @@ function renderAll(){
       var hrs={};dados.forEach(function(d){var h=String(d.hora).split(':')[0];if(h)hrs[h]=(hrs[h]||0)+1;});
       var ha=Object.keys(hrs).sort(function(a,b){return +a-+b;}).map(function(h){return {h:h+'h',v:hrs[h]};});
       novoChart('cHora',{type:'line',data:{labels:ha.map(function(x){return x.h;}),datasets:[{label:'Volume',data:ha.map(function(x){return x.v;}),borderColor:'#C9A227',backgroundColor:'rgba(201,162,39,.15)',fill:true,tension:.4,pointRadius:4}]},options:baseOpts});
+      // CONTATOS POR DIA — ORDENADO CRESCENTE POR DATA
       var diasA={};dados.forEach(function(d){var c=d.data.slice(0,5);diasA[c]=(diasA[c]||0)+1;});
-      var da=Object.keys(diasA).sort().map(function(k){return {l:k,v:diasA[k]};});
+      var da=Object.keys(diasA).sort(function(a,b){return paraISO(a+'/2026').localeCompare(paraISO(b+'/2026'));}).map(function(k){return {l:k,v:diasA[k]};});
       novoChart('cDia',{type:'line',data:{labels:da.map(function(x){return x.l;}),datasets:[{label:'Atendimentos',data:da.map(function(x){return x.v;}),borderColor:'#01302A',backgroundColor:'rgba(1,48,42,.10)',fill:true,tension:.35,pointRadius:2}]},options:baseOpts});
       var cat=contar(dados,'categoria',8);
       novoChart('cCat',{type:'bar',options:Object.assign({},baseOpts,{indexAxis:'y'}),data:{labels:cat.map(function(x){return x[0];}),datasets:[{label:'Qtd',data:cat.map(function(x){return x[1];}),backgroundColor:'rgba(1,48,42,.85)',borderRadius:6}]}});
@@ -402,11 +427,11 @@ function parseCSV(txt){
   return rows.filter(function(r){return r.some(function(x){return x.trim()!=='';});});
 }
 function parseLinha(r){
-  if(r.length<8)return null;
+  if(r.length&lt;8)return null;
   var m=(r[0]||'').match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
   if(!m)return null;
   var dia=+m[1],mes=+m[2],ano=+m[3];
-  if(ano<2026||mes<1||mes>12||dia<1||dia>31)return null;
+  if(ano&lt;2026||mes&lt;1||mes>12||dia&lt;1||dia>31)return null;
   var dd=String(dia).padStart(2,'0'),mm=String(mes).padStart(2,'0');
   return {data:dd+'/'+mm+'/'+ano,hora:(r[1]||'').trim(),canal:(r[2]||'').trim().toUpperCase(),atend:(r[3]||'').trim().toUpperCase(),antigo:(r[4]||'').trim().toUpperCase(),motivo:(r[7]||'').trim(),categoria:(r[8]||'').trim(),mesKey:ano+'-'+mm};
 }
@@ -417,7 +442,7 @@ async function carregar(){
     var txt=await tentar(getSheetUrl());
     var linhas=parseCSV(txt);
     var registros=linhas.slice(1).map(parseLinha).filter(Boolean);
-    if(registros.length<3)throw new Error('Poucos dados');
+    if(registros.length&lt;3)throw new Error('Poucos dados');
     DADOS=registros;live=true;montarFiltros();
     st.textContent='Dados ao vivo ('+registros.length+' registros)';st.className='ok';
   }catch(e){
