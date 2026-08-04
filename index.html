@@ -287,7 +287,6 @@ function filtrar(){
     var motOK=!filtros.motivo||norm(d.motivo)===filtros.motivo;
     var atOK=!filtros.atend||norm(d.atend)===filtros.atend;
     var canOK=!filtros.canal||norm(d.canal)===filtros.canal;
-    // Filtro por período (calendário)
     var iso=paraISO(d.data);
     var deOK=!filtros.de||iso>=filtros.de;
     var ateOK=!filtros.ate||iso<=filtros.ate;
@@ -331,7 +330,6 @@ function renderAll(){
     var st=document.getElementById('status');
     document.getElementById('kTotal').textContent=dados.length.toLocaleString('pt-BR');
     document.getElementById('kTotalSub').textContent=live?'dados ao vivo':'dados de exemplo';
-    // Card de período: mostra intervalo se houver calendário, senão mês
     if(filtros.de||filtros.ate){
       var rot='';
       if(filtros.de&&filtros.ate){rot='De '+filtros.de.split('-').reverse().join('/')+' a '+filtros.ate.split('-').reverse().join('/');}
@@ -368,9 +366,9 @@ function renderAll(){
       var hrs={};dados.forEach(function(d){var h=String(d.hora).split(':')[0];if(h)hrs[h]=(hrs[h]||0)+1;});
       var ha=Object.keys(hrs).sort(function(a,b){return +a-+b;}).map(function(h){return {h:h+'h',v:hrs[h]};});
       novoChart('cHora',{type:'line',data:{labels:ha.map(function(x){return x.h;}),datasets:[{label:'Volume',data:ha.map(function(x){return x.v;}),borderColor:'#C9A227',backgroundColor:'rgba(201,162,39,.15)',fill:true,tension:.4,pointRadius:4}]},options:baseOpts});
-      // CONTATOS POR DIA — ORDENADO CRESCENTE POR DATA
-      var diasA={};dados.forEach(function(d){var c=d.data.slice(0,5);diasA[c]=(diasA[c]||0)+1;});
-      var da=Object.keys(diasA).sort(function(a,b){return paraISO(a+'/2026').localeCompare(paraISO(b+'/2026'));}).map(function(k){return {l:k,v:diasA[k]};});
+      // CONTATOS POR DIA — ORDENADO CRESCENTE POR DATA (usa a data completa dd/mm/aaaa)
+      var diasA={};dados.forEach(function(d){diasA[d.data]=(diasA[d.data]||0)+1;});
+      var da=Object.keys(diasA).sort(function(a,b){return paraISO(a).localeCompare(paraISO(b));}).map(function(k){return {l:k.slice(0,5),v:diasA[k]};});
       novoChart('cDia',{type:'line',data:{labels:da.map(function(x){return x.l;}),datasets:[{label:'Atendimentos',data:da.map(function(x){return x.v;}),borderColor:'#01302A',backgroundColor:'rgba(1,48,42,.10)',fill:true,tension:.35,pointRadius:2}]},options:baseOpts});
       var cat=contar(dados,'categoria',8);
       novoChart('cCat',{type:'bar',options:Object.assign({},baseOpts,{indexAxis:'y'}),data:{labels:cat.map(function(x){return x[0];}),datasets:[{label:'Qtd',data:cat.map(function(x){return x[1];}),backgroundColor:'rgba(1,48,42,.85)',borderRadius:6}]}});
